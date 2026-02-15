@@ -1,0 +1,55 @@
+<svg width="900" height="250" viewBox="0 0 900 250" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Gradient Definitions -->
+  <defs>
+    <linearGradient id="crossGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D47A1"/>
+      <stop offset="100%" stop-color="#1DE9B6"/>
+    </linearGradient>
+
+    <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1976D2"/>
+      <stop offset="100%" stop-color="#00C853"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon Group -->
+  <g transform="translate(40,40)">
+    
+    <!-- Medical Cross -->
+    <rect x="60" y="0" width="60" height="160" rx="20" fill="url(#crossGradient)"/>
+    <rect x="0" y="50" width="180" height="60" rx="20" fill="url(#crossGradient)"/>
+
+    <!-- Flow Element -->
+    <path d="M10 110 
+             C60 80, 120 80, 170 50
+             C150 100, 90 140, 40 160 Z"
+          fill="white"
+          opacity="0.9"/>
+
+  </g>
+
+  <!-- Text Section -->
+  <g transform="translate(260,110)">
+    
+    <!-- Brand Name -->
+    <text x="0" y="0"
+          font-family="Segoe UI, Arial, sans-serif"
+          font-size="72"
+          font-weight="700"
+          fill="url(#flowGradient)">
+      MEDIFLOW
+    </text>
+
+    <!-- Tagline -->
+    <text x="3" y="50"
+          font-family="Segoe UI, Arial, sans-serif"
+          font-size="24"
+          letter-spacing="4"
+          fill="#6E6E6E">
+      CLINIC MANAGEMENT
+    </text>
+
+  </g>
+
+</svg>
