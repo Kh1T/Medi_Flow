@@ -49,17 +49,16 @@ class MedicalRecordController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-    {
-        $record = MedicalRecord::with(['patient.user', 'doctor.user', 'prescriptions'])->findOrFail($id);
-        return view('emr.show', compact('record'));
-    }
+public function show(string $id)
+{
+    $record = MedicalRecord::with(['patient.user', 'doctor.user', 'prescriptions'])->findOrFail($id);
+    return view('emr.show', compact('record'));
 }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+/**
+ * Show the form for editing the specified resource.
+ */
+public function edit(string $id)
     {
         //
     }
@@ -79,4 +78,5 @@ class MedicalRecordController extends Controller
     {
         //
     }
+    
 }
