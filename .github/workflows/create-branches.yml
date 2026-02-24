@@ -1,0 +1,36 @@
+name: Create Developer Branches
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  create-branches:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create bunli branch
+        run: |
+          if ! git ls-remote --exit-code origin bunli; then
+            git checkout -b bunli origin/master
+            git push origin bunli
+          else
+            echo "Branch bunli already exists, skipping."
+          fi
+
+      - name: Create david branch
+        run: |
+          if ! git ls-remote --exit-code origin david; then
+            git checkout -b david origin/master
+            git push origin david
+          else
+            echo "Branch david already exists, skipping."
+          fi
