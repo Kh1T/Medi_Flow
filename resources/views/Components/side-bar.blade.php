@@ -21,6 +21,33 @@
               </div>
             </li>
             <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="collapse" href="#opd" aria-expanded="false" aria-controls="opd">
+                <i class="menu-icon mdi mdi-stethoscope"></i>
+                <span class="menu-title">OPD Visits</span>
+                <i class="menu-arrow"></i>
+              </a>
+              <div class="collapse" id="opd">
+                <ul class="nav flex-column sub-menu">
+                  <li class="nav-item"><a class="nav-link" href="{{ route('opd.index') }}">All OPD Visits</a></li>
+                  <li class="nav-item"><a class="nav-link" href="{{ route('opd.create') }}">Register OPD</a></li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="collapse" href="#ipd" aria-expanded="false" aria-controls="ipd">
+                <i class="menu-icon mdi mdi-hospital-building"></i>
+                <span class="menu-title">IPD Admissions</span>
+                <i class="menu-arrow"></i>
+              </a>
+              <div class="collapse" id="ipd">
+                <ul class="nav flex-column sub-menu">
+                  <li class="nav-item"><a class="nav-link" href="{{ route('ipd.index') }}">IPD Patient List</a></li>
+                  <li class="nav-item"><a class="nav-link" href="{{ route('ipd.create') }}">New Admission</a></li>
+                  <li class="nav-item"><a class="nav-link" href="{{ route('beds.index') }}">Bed Dashboard</a></li>
+                </ul>
+              </div>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" data-bs-toggle="collapse" href="#appointments" aria-expanded="false" aria-controls="appointments">
                 <i class="menu-icon mdi mdi-calendar-clock"></i>
                 <span class="menu-title">Appointments</span>

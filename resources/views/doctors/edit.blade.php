@@ -28,8 +28,13 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="specialization">Specialization</label>
-                                    <input type="text" class="form-control @error('specialization') is-invalid @enderror" id="specialization" name="specialization" value="{{ old('specialization', $doctor->specialization) }}" required>
-                                </div>
+                                    <select class="form-control @error('specialization') is-invalid @enderror" id="specialization" name="specialization" required>
+                                        <option value="">Select Specialization</option>
+                                        @foreach(['General Medicine', 'Cardiology', 'Neurology', 'Orthopedics', 'Pediatrics', 'Dermatology', 'Internal Medicine', 'Obstetrics and Gynecology', 'Ophthalmology', 'Psychiatry', 'Radiology', 'Surgery', 'Urology'] as $spec)
+                                            <option value="{{ $spec }}" {{ old('specialization', $doctor->specialization) == $spec ? 'selected' : '' }}>{{ $spec }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('specialization')<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">

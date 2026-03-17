@@ -14,6 +14,7 @@ class Billing extends Model
     protected $fillable = [
         'patient_id',
         'appointment_id',
+        'opd_visit_id',
         'invoice_number',
         'charges',
         'contractual_adjustments',

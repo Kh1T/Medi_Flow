@@ -9,6 +9,11 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\OpdVisitController;
+use App\Http\Controllers\BedController;
+use App\Http\Controllers\IpdAdmissionController;
+use App\Http\Controllers\IpdManagementController;
+use App\Http\Controllers\IpdDischargeController;
 use Illuminate\Support\Facades\Route;
 
 // Authentication Routes
@@ -32,6 +37,24 @@ Route::middleware(['auth'])->group(function () {
 
     // Doctors
     Route::resource('doctors', DoctorController::class);
+
+    // OPD Visits
+    Route::post('opd/{opd}/invoice', [OpdVisitController::class, 'generateInvoice'])->name('opd.invoice');
+    Route::get('opd/{opd}/prescription', [OpdVisitController::class, 'printPrescription'])->name('opd.prescription');
+    Route::resource('opd', OpdVisitController::class);
+
+    // IPD & Beds
+    Route::resource('beds', BedController::class);
+    
+    Route::post('ipd/{ipd}/notes', [IpdManagementController::class, 'storeNote'])->name('ipd.notes.store');
+    Route::post('ipd/{ipd}/medications', [IpdManagementController::class, 'storeMedication'])->name('ipd.meds.store');
+    Route::post('ipd/{ipd}/labs', [IpdManagementController::class, 'storeLabRequest'])->name('ipd.labs.store');
+    
+    Route::get('ipd/{ipd}/discharge', [IpdDischargeController::class, 'create'])->name('ipd.discharge.create');
+    Route::post('ipd/{ipd}/discharge', [IpdDischargeController::class, 'store'])->name('ipd.discharge.store');
+    Route::get('ipd/{ipd}/certificate', [IpdDischargeController::class, 'printCertificate'])->name('ipd.certificate');
+
+    Route::resource('ipd', IpdAdmissionController::class);
 
     // Appointments
     Route::resource('appointments', AppointmentController::class);
