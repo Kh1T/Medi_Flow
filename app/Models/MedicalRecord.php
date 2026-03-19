@@ -34,6 +34,6 @@ class MedicalRecord extends Model
 
     public function prescriptions()
     {
-        return $this->hasMany(Prescription::class, 'record_id');
+        return $this->hasMany(Prescription::class, 'medical_record_id');
     }
 }

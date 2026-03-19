@@ -10,13 +10,12 @@
                     
                     <form action="{{ route('opd.index') }}" method="GET" class="mb-4">
                         <div class="row">
-                            <div class="col-md-4">
                             <div class="col-md-3">
                                 <div class="form-group mb-0">
                                     <input type="text" name="search" class="form-control" placeholder="Search Patient/Phone" value="{{ request('search') }}">
                                 </div>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-3">
                                 <div class="form-group mb-0">
                                     <select name="doctor_id" class="form-control">
                                         <option value="">All Doctors</option>
@@ -26,12 +25,12 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <div class="form-group mb-0">
                                     <input type="date" name="visit_date" class="form-control" value="{{ request('visit_date') }}">
                                 </div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <div class="form-group mb-0">
                                     <select name="status" class="form-control">
                                         <option value="">All Statuses</option>
@@ -109,13 +108,13 @@
                                             @if($visit->payment_status !== 'Paid')
                                             <form action="{{ route('opd.invoice', $visit->id) }}" method="POST" class="d-inline">
                                                 @csrf
-                                                <button type="submit" class="btn btn-sm btn-warning" title="Generate Invoice"><i class="mdi mdi-receipt"></i></button>
+                                                <button type="submit" class="btn btn-sm btn-warning rounded-0" title="Generate Invoice"><i class="mdi mdi-receipt"></i></button>
                                             </form>
                                             @endif
                                             <form action="{{ route('opd.destroy', $visit->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this visit?');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger" title="Delete"><i class="mdi mdi-delete"></i></button>
+                                                <button type="submit" class="btn btn-sm btn-danger rounded-0 rounded-end" title="Delete"><i class="mdi mdi-delete"></i></button>
                                             </form>
                                         </div>
                                     </td>
