@@ -16,7 +16,7 @@
                         </div>
                         <div class="col-md-6">
                             <h6 class="text-muted">Doctor Information</h6>
-                            <p><strong>Name:</strong> Dr. {{ $record->doctor->user->name }}</p>
+                            <p><strong>Name:</strong> {{ $record->doctor->user->name }}</p>
                             <p><strong>Specialization:</strong> {{ $record->doctor->specialization }}</p>
                         </div>
                     </div>

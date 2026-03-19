@@ -9,13 +9,22 @@ class Invoice extends Model
 {
     protected $fillable = [
         'patient_id',
+        'appointment_id',
         'opd_visit_id',
         'ipd_admission_id',
+        'invoice_number',
+        'charges',
+        'contractual_adjustments',
         'subtotal',
         'tax',
-        'total_amount',
-        'due_date',
+        'total',
+        'insurance_claim',
+        'insurance_company',
+        'insurance_coverage',
+        'patient_amount',
+        'paid_amount',
         'status',
+        'due_date',
     ];
 
     public function patient()

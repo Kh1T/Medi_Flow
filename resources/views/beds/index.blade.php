@@ -38,9 +38,6 @@
                         <div class="col-8 text-white">
                             <h3>{{ $stats['available'] }}</h3>
                         </div>
-                        <div class="col-4 background-icon">
-                            <i class="mdi mdi-check-circle-outline text-white"></i>
-                        </div>
                     </div>
                 </div>
             </div>
