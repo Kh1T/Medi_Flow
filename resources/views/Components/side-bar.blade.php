@@ -47,7 +47,7 @@
                 </ul>
               </div>
             </li>
-            <li class="nav-item">
+            <!-- <li class="nav-item">
               <a class="nav-link" data-bs-toggle="collapse" href="#appointments" aria-expanded="false" aria-controls="appointments">
                 <i class="menu-icon mdi mdi-calendar-clock"></i>
                 <span class="menu-title">Appointments</span>
@@ -65,7 +65,7 @@
                 <i class="menu-icon mdi mdi-file-document-outline"></i>
                 <span class="menu-title">Medical Records</span>
                 <i class="menu-arrow"></i>
-              </a>
+              </a> -->
               <div class="collapse" id="emr">
                 <ul class="nav flex-column sub-menu">
                   <li class="nav-item"><a class="nav-link" href="{{ url('/emr') }}">View Records</a></li>

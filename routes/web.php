@@ -15,6 +15,7 @@ use App\Http\Controllers\IpdAdmissionController;
 use App\Http\Controllers\IpdManagementController;
 use App\Http\Controllers\IpdDischargeController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CheckoutController;
 
 // Authentication Routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -64,4 +65,10 @@ Route::middleware(['auth'])->group(function () {
 
     // Billing
     Route::resource('billing', BillingController::class);
+
+    Route::get('/checkout/{billing}/payment', [CheckoutController::class, 'paymentPage'])->name('checkout.payment.page');
+    Route::post('/checkout/{billing}/cash', [CheckoutController::class, 'payCash'])->name('checkout.pay.cash');
+    Route::get('/checkout/{billing}/khqr', [CheckoutController::class, 'showKhqr'])->name('checkout.pay.khqr');
+    Route::post('/checkout/verify-transaction', [CheckoutController::class, 'verifyTransaction'])->name('checkout.verify.transaction');
+    Route::get('/checkout/{billing}/success', [CheckoutController::class, 'success'])->name('checkout.success');
 });

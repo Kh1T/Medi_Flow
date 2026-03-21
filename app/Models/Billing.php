@@ -27,7 +27,8 @@ class Billing extends Model
         'insurance_company',
         'paid_amount',
         'status',
-        'due_date'
+        'due_date',
+        'payment_method',
     ];
 
     public function patient()
