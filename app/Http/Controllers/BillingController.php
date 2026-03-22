@@ -56,12 +56,11 @@ class BillingController extends Controller
         $search = $request->get('q', '');
         
         $patients = Patient::with('user')
-            ->whereHas('user', function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%");
+            ->where(function ($query) use ($search) {
+                $query->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             })
-            ->orWhere('first_name', 'like', "%{$search}%")
-            ->orWhere('last_name', 'like', "%{$search}%")
-            ->orWhere('phone', 'like', "%{$search}%")
             ->limit(20)
             ->get()
             ->map(function ($patient) {
