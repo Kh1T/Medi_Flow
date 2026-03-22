@@ -43,4 +43,25 @@ class Patient extends Model
     {
         return $this->hasMany(IpdAdmission::class);
     }
+
+    public function insurances()
+    {
+        return $this->hasMany(Insurance::class);
+    }
+
+    /**
+     * Get the active (valid) insurance for the patient
+     */
+    public function activeInsurance()
+    {
+        return $this->hasOne(Insurance::class)->where('valid_until', '>=', now()->toDateString());
+    }
+
+    /**
+     * Check if patient has valid insurance
+     */
+    public function hasValidInsurance(): bool
+    {
+        return $this->insurances()->where('valid_until', '>=', now()->toDateString())->exists();
+    }
 }

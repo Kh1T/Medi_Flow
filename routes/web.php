@@ -64,4 +64,16 @@ Route::middleware(['auth'])->group(function () {
 
     // Billing
     Route::resource('billing', BillingController::class);
+    
+    // Billing by Patient Type (OPD/IPD)
+    Route::get('billing/create/type', [BillingController::class, 'createWithPatientType'])->name('billing.create.type');
+    Route::get('billing/patients/search', [BillingController::class, 'searchPatients'])->name('billing.patients.search');
+    Route::get('billing/patient/data', [BillingController::class, 'getPatientBillingData'])->name('billing.patient.data');
+    
+    // OPD Billing Routes
+    Route::get('billing/opd/{visit}', [BillingController::class, 'createOpdBilling'])->name('billing.opd.create');
+    Route::post('billing/opd/{visit}', [BillingController::class, 'storeOpdBilling'])->name('billing.opd.store');
+    Route::get('billing/calculate', [BillingController::class, 'calculateSummary'])->name('billing.calculate');
+    Route::get('billing/{invoice}/payment', [BillingController::class, 'showPaymentForm'])->name('billing.payment');
+    Route::post('billing/{invoice}/payment', [BillingController::class, 'processPayment'])->name('billing.processPayment');
 });

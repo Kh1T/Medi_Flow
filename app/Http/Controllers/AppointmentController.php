@@ -86,7 +86,28 @@ class AppointmentController extends Controller
             'appointment_time' => 'required',
         ]);
 
+        $oldStatus = $appointment->status;
         $appointment->update($request->only(['status', 'appointment_date', 'appointment_time', 'reason']));
+
+        // Notification logic
+        if ($oldStatus !== $appointment->status) {
+            $patientUserId = $appointment->patient->user_id;
+            $doctorUserId = $appointment->doctor->user_id;
+            $statusMsg = $appointment->status;
+            $title = 'Appointment Status Updated';
+            $message = "Your appointment (ID: {$appointment->id}) status changed to: $statusMsg.";
+            \App\Models\Notification::create([
+                'user_id' => $patientUserId,
+                'title' => $title,
+                'message' => $message,
+            ]);
+            // Optionally notify doctor
+            \App\Models\Notification::create([
+                'user_id' => $doctorUserId,
+                'title' => $title,
+                'message' => "Appointment (ID: {$appointment->id}) status changed to: $statusMsg.",
+            ]);
+        }
 
         return redirect()->route('appointments.index')->with('success', 'Appointment updated successfully');
     }
