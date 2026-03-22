@@ -46,12 +46,11 @@ class BillingController extends Controller
         $search = $request->get('q', '');
         
         $patients = Patient::with('user')
-            ->whereHas('user', function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%");
+            ->where(function ($query) use ($search) {
+                $query->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             })
-            ->orWhere('first_name', 'like', "%{$search}%")
-            ->orWhere('last_name', 'like', "%{$search}%")
-            ->orWhere('phone', 'like', "%{$search}%")
             ->limit(20)
             ->get()
             ->map(function ($patient) {
@@ -149,27 +148,68 @@ class BillingController extends Controller
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'charges' => 'required|numeric|min:0',
-            'contractual_adjustments' => 'nullable|numeric|min:0',
-            'insurance_coverage' => 'nullable|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0',
+            'apply_insurance' => 'nullable|boolean',
             'status' => 'required|in:pending,paid,partially_paid,overdue,cancelled',
-            'due_date' => 'required|date',
+            'due_date' => 'nullable|date',
         ]);
 
         $data = $request->all();
         $data['invoice_number'] = 'INV-' . strtoupper(str()->random(8));
         
-        // Calculate Patient Responsibility
-        // Formula: Charges - Contractual Adjustments - Insurance Payments = Patient Responsibility
+        // Calculate totals
         $charges = floatval($request->charges ?? 0);
-        $contractual_adjustments = floatval($request->contractual_adjustments ?? 0);
-        $insurance_coverage = floatval($request->insurance_coverage ?? 0);
+        $discount = floatval($request->discount ?? 0);
+        $applyInsurance = $request->boolean('apply_insurance');
         
-        $data['charges'] = $charges;
-        $data['contractual_adjustments'] = $contractual_adjustments;
-        $data['insurance_coverage'] = $insurance_coverage;
-        $data['patient_amount'] = $charges - $contractual_adjustments - $insurance_coverage;
-        $data['total'] = $data['patient_amount']; // Total is what patient owes
-        $data['subtotal'] = $charges; // Subtotal is the base charges
+        $data['contractual_adjustments'] = $discount;
+        $data['subtotal'] = $charges - $discount;
+        
+        // Calculate insurance coverage if applied
+        $insuranceCoverage = 0;
+        $insuranceCompany = null;
+        $insuranceClaim = false;
+        
+        if ($applyInsurance) {
+            $patient = Patient::find($request->patient_id);
+            $insurance = $patient->insurances()
+                ->where('valid_until', '>=', now()->toDateString())
+                ->first();
+            
+            if ($insurance) {
+                $insuranceCoverage = ($data['subtotal'] * $insurance->coverage_percentage) / 100;
+                $insuranceCompany = $insurance->provider_name;
+                $insuranceClaim = true;
+            }
+        }
+        
+        $data['insurance_coverage'] = $insuranceCoverage;
+        $data['insurance_company'] = $insuranceCompany;
+        $data['insurance_claim'] = $insuranceClaim;
+        
+        // Patient amount = subtotal - insurance coverage
+        $patientAmount = max(0, $data['subtotal'] - $insuranceCoverage);
+        $data['patient_amount'] = $patientAmount;
+        $data['total'] = $patientAmount;
+        
+        // Set paid amount
+        $paidAmount = floatval($request->paid_amount ?? 0);
+        $data['paid_amount'] = $paidAmount;
+        
+        // Update status based on payment
+        if ($paidAmount >= $patientAmount && $patientAmount > 0) {
+            $data['status'] = 'paid';
+        } elseif ($paidAmount > 0) {
+            $data['status'] = 'partially_paid';
+        }
+
+        // If OPD visit linked, update payment status
+        if ($request->opd_visit_id) {
+            $opdVisit = OpdVisit::find($request->opd_visit_id);
+            if ($opdVisit) {
+                $opdVisit->update(['payment_status' => $data['status'] === 'paid' ? 'Paid' : 'Pending']);
+            }
+        }
 
         Billing::create($data);
 
