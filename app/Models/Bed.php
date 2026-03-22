@@ -14,12 +14,14 @@ class Bed extends Model
         'bed_number',
         'is_occupied',
         'floor',
+        'price_per_day',
     ];
 
     protected function casts(): array
     {
         return [
             'is_occupied' => 'boolean',
+            'price_per_day' => 'decimal:2',
         ];
     }
 

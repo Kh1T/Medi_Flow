@@ -8,20 +8,10 @@ use App\Models\Appointment;
 use App\Models\OpdVisit;
 use App\Models\IpdAdmission;
 use App\Services\BillingService;
-use App\Models\OpdVisit;
-use App\Models\IpdAdmission;
-use App\Services\BillingService;
 use Illuminate\Http\Request;
 
 class BillingController extends Controller
 {
-    protected $billingService;
-
-    public function __construct(BillingService $billingService)
-    {
-        $this->billingService = $billingService;
-    }
-
     protected $billingService;
 
     public function __construct(BillingService $billingService)
@@ -232,7 +222,6 @@ class BillingController extends Controller
     public function show(string $id)
     {
         $bill = Billing::with(['patient.user', 'appointment.doctor.user', 'opdVisit.doctor.user'])->findOrFail($id);
-        $bill = Billing::with(['patient.user', 'appointment.doctor.user', 'opdVisit.doctor.user'])->findOrFail($id);
         return view('billing.show', compact('bill'));
     }
 
@@ -255,91 +244,6 @@ class BillingController extends Controller
         $bill = Billing::findOrFail($id);
         $bill->delete();
         return redirect()->route('billing.index')->with('success', 'Invoice deleted');
-    }
-
-    /**
-     * Show OPD billing form for a specific visit
-     */
-    public function createOpdBilling(string $visitId)
-    {
-        $visit = OpdVisit::with(['patient.user', 'doctor.user'])->findOrFail($visitId);
-        
-        // Check if invoice already exists
-        $existingInvoice = Billing::where('opd_visit_id', $visitId)->first();
-        
-        // Get patient's active insurance
-        $patient = $visit->patient;
-        $insurance = $patient->insurances()
-            ->where('valid_until', '>=', now()->toDateString())
-            ->first();
-        
-        return view('billing.opd_create', compact('visit', 'existingInvoice', 'insurance'));
-    }
-
-    /**
-     * Calculate billing summary (for AJAX)
-     */
-    public function calculateSummary(Request $request)
-    {
-        $billingData = $request->all();
-        $summary = $this->billingService->calculateBillingSummary($billingData);
-        
-        return response()->json($summary);
-    }
-
-    /**
-     * Store OPD billing invoice
-     */
-    public function storeOpdBilling(Request $request, string $visitId)
-    {
-        $visit = OpdVisit::findOrFail($visitId);
-
-        $request->validate([
-            'consultation_fee' => 'required|numeric|min:0',
-            'lab_charges' => 'nullable|numeric|min:0',
-            'medicine_cost' => 'nullable|numeric|min:0',
-            'procedure_charges' => 'nullable|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0',
-            'apply_insurance' => 'nullable|boolean',
-            'payment_method' => 'required|in:cash,card,insurance',
-            'paid_amount' => 'required|numeric|min:0',
-        ]);
-
-        $billingData = $request->all();
-        $invoice = $this->billingService->generateOpdInvoice($visit, $billingData);
-
-        return redirect()->route('billing.show', $invoice->id)
-            ->with('success', 'OPD Invoice generated successfully');
-    }
-
-    /**
-     * Process payment for an invoice
-     */
-    public function processPayment(Request $request, string $id)
-    {
-        $request->validate([
-            'amount' => 'required|numeric|min:0',
-            'method' => 'required|in:cash,card,insurance',
-        ]);
-
-        $invoice = Billing::findOrFail($id);
-        $invoice = $this->billingService->processPayment(
-            $invoice,
-            $request->amount,
-            $request->method
-        );
-
-        return redirect()->route('billing.show', $id)
-            ->with('success', 'Payment processed successfully. Paid: $' . number_format($invoice->paid_amount, 2));
-    }
-
-    /**
-     * Show payment form for an invoice
-     */
-    public function showPaymentForm(string $id)
-    {
-        $invoice = Billing::with('patient.user')->findOrFail($id);
-        return view('billing.payment', compact('invoice'));
     }
 
     /**

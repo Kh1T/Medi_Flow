@@ -30,6 +30,9 @@ class Billing extends Model
         'status',
         'due_date',
         'payment_method',
+        'bed_type',
+        'bed_days',
+        'bed_charges',
     ];
 
     protected function casts(): array
@@ -44,6 +47,8 @@ class Billing extends Model
             'total' => 'decimal:2',
             'paid_amount' => 'decimal:2',
             'insurance_claim' => 'boolean',
+            'bed_days' => 'integer',
+            'bed_charges' => 'decimal:2',
         ];
     }
 

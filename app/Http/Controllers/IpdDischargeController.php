@@ -5,31 +5,33 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\IpdAdmission;
-use App\Models\Invoice;
+use App\Models\Billing;
 use App\Models\Bed;
+use App\Services\BillingService;
 use Carbon\Carbon;
 
 class IpdDischargeController extends Controller
 {
+    protected $billingService;
+
+    public function __construct(BillingService $billingService)
+    {
+        $this->billingService = $billingService;
+    }
+
     public function create(IpdAdmission $ipd)
     {
         if ($ipd->status != 'admitted') {
             return redirect()->route('ipd.index')->with('error', 'Patient is not currently admitted.');
         }
 
-        $ipd->load(['patient.user']);
+        $ipd->load(['patient.user', 'bed']);
 
-        // Estimate current bill (Bed Days)
-        $days = Carbon::parse($ipd->admission_date)->diffInDays(now()) ?: 1; // min 1 day
-        
-        // Let's assume some base rates for demonstration
-        $rates = [
-            'General' => 500,
-            'Private' => 1500,
-            'ICU' => 5000
-        ];
-        $dailyRate = $rates[$ipd->ward_type] ?? 1000;
-        $bedCharges = $days * $dailyRate;
+        // Calculate bed charges using the billing service
+        $bedSummary = $this->billingService->calculateIpdBedSummary($ipd);
+        $days = $bedSummary['bed_days'];
+        $dailyRate = $bedSummary['price_per_day'];
+        $bedCharges = $bedSummary['bed_charges'];
 
         // Count meds as approx estimate (Demo purposes)
         $medCount = DB::table('ipd_medications')->where('ipd_admission_id', $ipd->id)->count();
@@ -45,27 +47,30 @@ class IpdDischargeController extends Controller
             'bed_charges' => 'required|numeric|min:0',
             'medicine_charges' => 'required|numeric|min:0',
             'misc_charges' => 'required|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0',
+            'apply_insurance' => 'nullable|boolean',
+            'paid_amount' => 'nullable|numeric|min:0',
         ]);
 
-        $totalBill = $request->bed_charges + $request->medicine_charges + $request->misc_charges;
+        // Prepare billing data for the service
+        $billingData = [
+            'bed_charges' => floatval($request->bed_charges),
+            'medicine_charges' => floatval($request->medicine_charges),
+            'misc_charges' => floatval($request->misc_charges),
+            'discount' => floatval($request->discount ?? 0),
+            'apply_insurance' => $request->boolean('apply_insurance'),
+            'paid_amount' => floatval($request->paid_amount ?? 0),
+        ];
 
-        // Generate Invoice
-        $invoice = Invoice::create([
-            'patient_id' => $ipd->patient_id,
-            'ipd_admission_id' => $ipd->id,
-            'subtotal' => $totalBill,
-            'tax' => $totalBill * 0.05, // 5% tax example
-            'total_amount' => $totalBill * 1.05,
-            'due_date' => now()->addDays(3),
-            'status' => 'Pending'
-        ]);
+        // Generate Invoice using BillingService
+        $invoice = $this->billingService->generateIpdInvoice($ipd, $billingData);
 
         // Update Admission
         $ipd->update([
             'status' => 'discharged',
             'discharge_date' => now(),
             'discharge_summary' => $request->discharge_summary,
-            'total_bill' => $totalBill
+            'total_bill' => $invoice->total
         ]);
 
         // Free the Bed
@@ -74,7 +79,7 @@ class IpdDischargeController extends Controller
         }
 
         return redirect()->route('ipd.certificate', $ipd->id)
-                         ->with('success', 'Patient successfully discharged. Invoice #' . str_pad($invoice->id, 5, '0', STR_PAD_LEFT) . ' generated.');
+                         ->with('success', 'Patient successfully discharged. Invoice #' . $invoice->invoice_number . ' generated.');
     }
 
     public function printCertificate(IpdAdmission $ipd)

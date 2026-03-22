@@ -6,6 +6,8 @@ use App\Models\Billing;
 use App\Models\OpdVisit;
 use App\Models\Patient;
 use App\Models\Insurance;
+use App\Models\IpdAdmission;
+use App\Models\Bed;
 use Illuminate\Support\Facades\DB;
 
 class BillingService
@@ -207,6 +209,144 @@ class BillingService
             'after_discount' => $afterDiscount,
             'insurance_coverage' => $insuranceCoverage,
             'final_bill' => max(0, $patientAmount),
+        ];
+    }
+
+    /**
+     * Generate IPD Invoice with bed charges based on bed type and days stayed
+     * 
+     * @param IpdAdmission $admission
+     * @param array $billingData [
+     *     'bed_charges' => float,
+     *     'medicine_charges' => float,
+     *     'misc_charges' => float,
+     *     'discount' => float,
+     *     'apply_insurance' => boolean,
+     *     'payment_method' => string,
+     *     'paid_amount' => float,
+     * ]
+     * @return Billing
+     */
+    public function generateIpdInvoice(IpdAdmission $admission, array $billingData): Billing
+    {
+        return DB::transaction(function () use ($admission, $billingData) {
+            // Get bed information
+            $bed = $admission->bed;
+            $bedType = $admission->ward_type ?? 'General';
+            $bedDays = $admission->admission_date->diffInDays($admission->discharge_date ?? now()) ?: 1;
+            
+            // Get bed price per day (from bed model)
+            $bedPricePerDay = $bed?->price_per_day ?? $this->getDefaultBedRate($bedType);
+            $bedCharges = floatval($billingData['bed_charges'] ?? ($bedDays * $bedPricePerDay));
+            
+            // Extract other billing components
+            $medicineCharges = floatval($billingData['medicine_charges'] ?? 0);
+            $miscCharges = floatval($billingData['misc_charges'] ?? 0);
+            $discount = floatval($billingData['discount'] ?? 0);
+            $applyInsurance = $billingData['apply_insurance'] ?? false;
+            $paymentMethod = $billingData['payment_method'] ?? 'cash';
+            $paidAmount = floatval($billingData['paid_amount'] ?? 0);
+
+            // Calculate subtotal (before discount and insurance)
+            $subtotal = $bedCharges + $medicineCharges + $miscCharges;
+
+            // Apply discount
+            $afterDiscount = $subtotal - $discount;
+
+            // Calculate insurance if applicable
+            $insuranceCoverage = 0;
+            $insuranceCompany = null;
+            $insuranceClaim = false;
+
+            if ($applyInsurance) {
+                $insuranceResult = $this->calculateInsuranceCoverage($admission->patient_id, $afterDiscount);
+                $insuranceCoverage = $insuranceResult['insurance_coverage'];
+                $insuranceCompany = $insuranceResult['insurance']?->provider_name;
+                $insuranceClaim = $insuranceCoverage > 0;
+            }
+
+            // Calculate patient amount (final amount patient owes)
+            $patientAmount = max(0, $afterDiscount - $insuranceCoverage);
+
+            // Calculate tax (example: 5% tax)
+            $tax = $patientAmount * 0.05;
+            $total = $patientAmount + $tax;
+
+            // Determine status based on payment
+            $status = 'pending';
+            if ($paidAmount >= $total && $total > 0) {
+                $status = 'paid';
+            } elseif ($paidAmount > 0 && $paidAmount < $total) {
+                $status = 'partially_paid';
+            }
+
+            // Generate invoice number
+            $invoiceNumber = 'INV-IPD-' . strtoupper(str()->random(6));
+
+            // Create invoice
+            $invoice = Billing::create([
+                'patient_id' => $admission->patient_id,
+                'ipd_admission_id' => $admission->id,
+                'invoice_number' => $invoiceNumber,
+                'charges' => $subtotal,
+                'contractual_adjustments' => $discount,
+                'subtotal' => $afterDiscount,
+                'tax' => $tax,
+                'total' => $total,
+                'insurance_claim' => $insuranceClaim,
+                'insurance_company' => $insuranceCompany,
+                'insurance_coverage' => $insuranceCoverage,
+                'patient_amount' => $patientAmount,
+                'paid_amount' => $paidAmount,
+                'status' => $status,
+                'due_date' => now()->addDays(7)->toDateString(),
+                'bed_type' => $bedType,
+                'bed_days' => $bedDays,
+                'bed_charges' => $bedCharges,
+            ]);
+
+            return $invoice;
+        });
+    }
+
+    /**
+     * Get default bed rate based on ward type
+     * 
+     * @param string $wardType
+     * @return float
+     */
+    public function getDefaultBedRate(string $wardType): float
+    {
+        $rates = [
+            'General' => 500,
+            'Private' => 1500,
+            'ICU' => 5000,
+            'VIP' => 3000,
+            'Semi-Private' => 1000,
+        ];
+
+        return $rates[$wardType] ?? 1000;
+    }
+
+    /**
+     * Calculate IPD bed charges summary
+     * 
+     * @param IpdAdmission $admission
+     * @return array
+     */
+    public function calculateIpdBedSummary(IpdAdmission $admission): array
+    {
+        $bed = $admission->bed;
+        $bedType = $admission->ward_type ?? 'General';
+        $bedDays = $admission->admission_date->diffInDays($admission->discharge_date ?? now()) ?: 1;
+        $bedPricePerDay = $bed?->price_per_day ?? $this->getDefaultBedRate($bedType);
+        $bedCharges = $bedDays * $bedPricePerDay;
+
+        return [
+            'bed_type' => $bedType,
+            'bed_days' => $bedDays,
+            'price_per_day' => $bedPricePerDay,
+            'bed_charges' => $bedCharges,
         ];
     }
 }
