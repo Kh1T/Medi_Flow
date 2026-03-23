@@ -16,14 +16,11 @@ class IpdAdmission extends Model
         'bed_id',
         'admission_date',
         'discharge_date',
-        'ward_type',
-        'bed_number',
         'admission_type',
         'admission_reason',
         'symptoms',
         'diagnosis',
         'discharge_summary',
-        'total_bill',
         'status',
     ];
 

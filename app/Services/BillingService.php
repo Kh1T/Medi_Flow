@@ -70,8 +70,6 @@ class BillingService
             $procedureCharges = floatval($billingData['procedure_charges'] ?? 0);
             $discount = floatval($billingData['discount'] ?? 0);
             $applyInsurance = $billingData['apply_insurance'] ?? false;
-            $paymentMethod = $billingData['payment_method'] ?? 'cash';
-            $paidAmount = floatval($billingData['paid_amount'] ?? 0);
 
             // Calculate subtotal (before discount and insurance)
             $subtotal = $consultationFee + $labCharges + $medicineCost + $procedureCharges;
@@ -94,18 +92,10 @@ class BillingService
             // Calculate patient amount (final amount patient owes)
             $patientAmount = max(0, $afterDiscount - $insuranceCoverage);
 
-            // Determine status based on payment
-            $status = 'pending';
-            if ($paidAmount >= $patientAmount && $patientAmount > 0) {
-                $status = 'paid';
-            } elseif ($paidAmount > 0 && $paidAmount < $patientAmount) {
-                $status = 'partially_paid';
-            }
-
             // Generate invoice number
             $invoiceNumber = 'INV-OPD-' . strtoupper(str()->random(6));
 
-            // Create invoice
+            // Create invoice - status is always pending when created (payment is done separately)
             $invoice = Billing::create([
                 'patient_id' => $visit->patient_id,
                 'opd_visit_id' => $visit->id,
@@ -113,23 +103,19 @@ class BillingService
                 'charges' => $subtotal,
                 'contractual_adjustments' => $discount,
                 'subtotal' => $afterDiscount,
-                'tax' => 0, // Can be added if needed
+                'tax' => 0,
                 'total' => $patientAmount,
                 'insurance_claim' => $insuranceClaim,
                 'insurance_company' => $insuranceCompany,
                 'insurance_coverage' => $insuranceCoverage,
                 'patient_amount' => $patientAmount,
-                'paid_amount' => $paidAmount,
-                'status' => $status,
+                'paid_amount' => 0, // Payment is done via "Mark as Paid"
+                'status' => 'pending', // Default status is pending
                 'due_date' => now()->addDays(7)->toDateString(),
             ]);
 
-            // Update OPD visit payment status if fully paid
-            if ($status === 'paid') {
-                $visit->update(['payment_status' => 'Paid']);
-            } elseif ($paidAmount > 0) {
-                $visit->update(['payment_status' => 'Pending']);
-            }
+            // Update OPD visit payment status
+            $visit->update(['payment_status' => 'Pending']);
 
             return $invoice;
         });
@@ -232,7 +218,7 @@ class BillingService
         return DB::transaction(function () use ($admission, $billingData) {
             // Get bed information
             $bed = $admission->bed;
-            $bedType = $admission->ward_type ?? 'General';
+            $bedType = $bed?->ward_type ?? 'General';
             $bedDays = $admission->admission_date->diffInDays($admission->discharge_date ?? now()) ?: 1;
             
             // Get bed price per day (from bed model)
@@ -244,8 +230,6 @@ class BillingService
             $miscCharges = floatval($billingData['misc_charges'] ?? 0);
             $discount = floatval($billingData['discount'] ?? 0);
             $applyInsurance = $billingData['apply_insurance'] ?? false;
-            $paymentMethod = $billingData['payment_method'] ?? 'cash';
-            $paidAmount = floatval($billingData['paid_amount'] ?? 0);
 
             // Calculate subtotal (before discount and insurance)
             $subtotal = $bedCharges + $medicineCharges + $miscCharges;
@@ -272,18 +256,10 @@ class BillingService
             $tax = $patientAmount * 0.05;
             $total = $patientAmount + $tax;
 
-            // Determine status based on payment
-            $status = 'pending';
-            if ($paidAmount >= $total && $total > 0) {
-                $status = 'paid';
-            } elseif ($paidAmount > 0 && $paidAmount < $total) {
-                $status = 'partially_paid';
-            }
-
             // Generate invoice number
             $invoiceNumber = 'INV-IPD-' . strtoupper(str()->random(6));
 
-            // Create invoice
+            // Create invoice - status is always pending when created (payment is done separately)
             $invoice = Billing::create([
                 'patient_id' => $admission->patient_id,
                 'ipd_admission_id' => $admission->id,
@@ -297,8 +273,8 @@ class BillingService
                 'insurance_company' => $insuranceCompany,
                 'insurance_coverage' => $insuranceCoverage,
                 'patient_amount' => $patientAmount,
-                'paid_amount' => $paidAmount,
-                'status' => $status,
+                'paid_amount' => 0, // Payment is done via "Mark as Paid"
+                'status' => 'pending', // Default status is pending
                 'due_date' => now()->addDays(7)->toDateString(),
                 'bed_type' => $bedType,
                 'bed_days' => $bedDays,

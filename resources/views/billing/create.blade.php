@@ -135,26 +135,7 @@
                                 </div>
                             </div>
 
-                            <!-- Payment -->
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="payment_method">Payment Method</label>
-                                        <select class="form-control" name="payment_method" required>
-                                            <option value="cash">Cash</option>
-                                            <option value="card">Card</option>
-                                            <option value="insurance">Insurance</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="paid_amount">Paid Amount ($)</label>
-                                        <input type="number" step="0.01" class="form-control" id="paid_amount" name="paid_amount" placeholder="0.00" value="0">
-                                    </div>
-                                </div>
-                            </div>
-
+                            <!-- Due Date -->
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
@@ -162,16 +143,11 @@
                                         <input type="date" class="form-control" name="due_date" value="{{ date('Y-m-d', strtotime('+7 days')) }}">
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="status">Status</label>
-                                        <select class="form-control" name="status" required>
-                                            <option value="pending">Pending</option>
-                                            <option value="paid">Paid</option>
-                                            <option value="overdue">Overdue</option>
-                                        </select>
-                                    </div>
-                                </div>
+                            </div>
+
+                            <!-- Note about payment -->
+                            <div class="alert alert-info mt-3">
+                                <strong>Note:</strong> Payment will be processed separately using "Mark as Paid" button after invoice creation.
                             </div>
 
                             <button type="submit" class="btn btn-primary me-2">Create Invoice</button>

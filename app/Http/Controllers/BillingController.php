@@ -150,7 +150,6 @@ class BillingController extends Controller
             'charges' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'apply_insurance' => 'nullable|boolean',
-            'status' => 'required|in:pending,paid,partially_paid,overdue,cancelled',
             'due_date' => 'nullable|date',
         ]);
 
@@ -192,22 +191,15 @@ class BillingController extends Controller
         $data['patient_amount'] = $patientAmount;
         $data['total'] = $patientAmount;
         
-        // Set paid amount
-        $paidAmount = floatval($request->paid_amount ?? 0);
-        $data['paid_amount'] = $paidAmount;
-        
-        // Update status based on payment
-        if ($paidAmount >= $patientAmount && $patientAmount > 0) {
-            $data['status'] = 'paid';
-        } elseif ($paidAmount > 0) {
-            $data['status'] = 'partially_paid';
-        }
+        // Set status to pending by default (payment is done separately via "Mark as Paid")
+        $data['status'] = 'pending';
+        $data['paid_amount'] = 0;
 
         // If OPD visit linked, update payment status
         if ($request->opd_visit_id) {
             $opdVisit = OpdVisit::find($request->opd_visit_id);
             if ($opdVisit) {
-                $opdVisit->update(['payment_status' => $data['status'] === 'paid' ? 'Paid' : 'Pending']);
+                $opdVisit->update(['payment_status' => 'Pending']);
             }
         }
 

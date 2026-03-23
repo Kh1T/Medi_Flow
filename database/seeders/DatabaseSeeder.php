@@ -11,7 +11,7 @@ use App\Models\MedicalRecord;
 use App\Models\OpdVisit;
 use App\Models\Bed;
 use App\Models\IpdAdmission;
-use App\Models\Invoice;
+use App\Models\Billing;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -379,7 +379,7 @@ class DatabaseSeeder extends Seeder
             $isPaid = $visit->payment_status === 'Paid';
             $createdAt = $visit->visit_date;
 
-            Invoice::create([
+            Billing::create([
                 'patient_id' => $visit->patient_id,
                 'opd_visit_id' => $visit->id,
                 'invoice_number' => 'INV-' . str_pad($invoiceNum++, 6, '0', STR_PAD_LEFT),
@@ -415,7 +415,7 @@ class DatabaseSeeder extends Seeder
             $isPaid = $faker->boolean(70);
             $createdAt = $admission->discharge_date;
 
-            Invoice::create([
+            Billing::create([
                 'patient_id' => $admission->patient_id,
                 'ipd_admission_id' => $admission->id,
                 'invoice_number' => 'INV-' . str_pad($invoiceNum++, 6, '0', STR_PAD_LEFT),
@@ -444,6 +444,6 @@ class DatabaseSeeder extends Seeder
         echo "  • " . OpdVisit::count() . " OPD visits\n";
         echo "  • " . IpdAdmission::count() . " IPD admissions\n";
         echo "  • " . Bed::count() . " beds\n";
-        echo "  • " . Invoice::count() . " invoices\n";
+        echo "  • " . Billing::count() . " invoices\n";
     }
 }

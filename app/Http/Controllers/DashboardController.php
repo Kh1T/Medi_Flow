@@ -8,7 +8,6 @@ use App\Models\Appointment;
 use App\Models\OpdVisit;
 use App\Models\IpdAdmission;
 use App\Models\Billing;
-use App\Models\Invoice;
 use App\Models\Bed;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -24,7 +23,7 @@ class DashboardController extends Controller
             'current_ipd_patients' => IpdAdmission::where('status', 'admitted')->orWhereNull('discharge_date')->count(),
             'doctors' => Doctor::count(),
             'appointments' => Appointment::count(),
-            'revenue' => Invoice::where('status', 'paid')->sum('total'),
+            'revenue' => Billing::where('status', 'paid')->sum('total'),
         ];
 
         // 1. Revenue Chart Data (Last 6 Months: OPD vs IPD)
@@ -39,11 +38,11 @@ class DashboardController extends Controller
             $start = Carbon::parse($month)->startOfMonth();
             $end = Carbon::parse($month)->endOfMonth();
 
-            $revenueData['opd'][] = Invoice::where('status', 'paid')
+            $revenueData['opd'][] = Billing::where('status', 'paid')
                 ->whereNotNull('opd_visit_id')->whereNull('ipd_admission_id')
                 ->whereBetween('created_at', [$start, $end])->sum('total');
 
-            $revenueData['ipd'][] = Invoice::where('status', 'paid')
+            $revenueData['ipd'][] = Billing::where('status', 'paid')
                 ->whereNotNull('ipd_admission_id')
                 ->whereBetween('created_at', [$start, $end])->sum('total');
         }

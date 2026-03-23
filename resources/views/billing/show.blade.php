@@ -85,8 +85,51 @@
 
                     <div class="d-flex justify-content-between no-print">
                         <a href="{{ route('billing.index') }}" class="btn btn-secondary">Back to Invoices</a>
-                        <button onclick="window.print()" class="btn btn-info"><i class="mdi mdi-printer"></i> Print</button>
+                        <div>
+                            @if($bill->status != 'paid')
+                                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                                    <i class="mdi mdi-cash"></i> Mark as Paid
+                                </button>
+                            @endif
+                            <button onclick="window.print()" class="btn btn-info"><i class="mdi mdi-printer"></i> Print</button>
+                        </div>
                     </div>
+
+                    <!-- Payment Modal -->
+                    @if($bill->status != 'paid')
+                    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="paymentModalLabel">Process Payment - {{ $bill->invoice_number }}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <form action="{{ route('billing.processPayment', $bill->id) }}" method="POST">
+                                    @csrf
+                                    <div class="modal-body">
+                                        <div class="mb-3">
+                                            <label class="form-label">Payment Method</label>
+                                            <select name="method" class="form-select" required>
+                                                <option value="cash">Cash</option>
+                                                <option value="card">Card</option>
+                                                <option value="insurance">Insurance</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Amount ($)</label>
+                                            <input type="number" name="amount" class="form-control" step="0.01" min="0" value="{{ $bill->patient_amount - $bill->paid_amount }}" required>
+                                            <small class="text-muted">Balance due: ${{ number_format($bill->patient_amount - $bill->paid_amount, 2) }}</small>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-success">Process Payment</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
