@@ -47,7 +47,7 @@
                     <h4 class="card-title">Doctor Information</h4>
                     <ul class="nav nav-tabs tab-solid tab-solid-primary" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" id="appointments-tab" data-bs-toggle="tab" href="#appointments" role="tab" aria-controls="appointments" aria-selected="true">Appointments</a>
+                            <a class="nav-link active" id="visits-tab" data-bs-toggle="tab" href="#visits" role="tab" aria-controls="visits" aria-selected="true">OPD Visits</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" id="availability-tab" data-bs-toggle="tab" href="#availability" role="tab" aria-controls="availability" aria-selected="false">Availability</a>
@@ -57,30 +57,30 @@
                         </li>
                     </ul>
                     <div class="tab-content tab-content-solid">
-                        <div class="tab-pane fade show active" id="appointments" role="tabpanel" aria-labelledby="appointments-tab">
+                        <div class="tab-pane fade show active" id="visits" role="tabpanel" aria-labelledby="visits-tab">
                             <div class="table-responsive">
                                 <table class="table">
                                     <thead>
                                         <tr>
                                             <th>Date</th>
-                                            <th>Time</th>
+                                            <th>Token</th>
                                             <th>Patient</th>
-                                            <th>Reason</th>
+                                            <th>Type</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse($doctor->appointments as $appointment)
+                                        @forelse($doctor->opdVisits()->latest()->take(10)->get() as $visit)
                                             <tr>
-                                                <td>{{ $appointment->appointment_date }}</td>
-                                                <td>{{ $appointment->appointment_time }}</td>
-                                                <td>{{ $appointment->patient->user->name }}</td>
-                                                <td>{{ $appointment->reason ?? 'N/A' }}</td>
-                                                <td><label class="badge badge-info">{{ $appointment->status }}</label></td>
+                                                <td>{{ $visit->visit_date->format('M d, Y') }}</td>
+                                                <td>#{{ $visit->token_number }}</td>
+                                                <td>{{ $visit->patient->first_name }} {{ $visit->patient->last_name }}</td>
+                                                <td>{{ $visit->visit_type }}</td>
+                                                <td><label class="badge badge-{{ $visit->status == 'completed' ? 'success' : ($visit->status == 'in_progress' ? 'info' : 'secondary') }}">{{ ucfirst(str_replace('_', ' ', $visit->status)) }}</label></td>
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="5" class="text-center text-muted">No appointments scheduled.</td>
+                                                <td colspan="5" class="text-center text-muted">No OPD visits recorded.</td>
                                             </tr>
                                         @endforelse
                                     </tbody>

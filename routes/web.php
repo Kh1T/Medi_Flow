@@ -3,7 +3,6 @@
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\DoctorController;
-use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\BillingController;
 use App\Http\Controllers\DashboardController;
@@ -56,9 +55,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('ipd/{ipd}/certificate', [IpdDischargeController::class, 'printCertificate'])->name('ipd.certificate');
 
     Route::resource('ipd', IpdAdmissionController::class);
-
-    // Appointments
-    Route::resource('appointments', AppointmentController::class);
 
     // EMR (Medical Records)
     Route::resource('emr', MedicalRecordController::class);

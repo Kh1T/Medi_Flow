@@ -29,11 +29,6 @@ class Patient extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function appointments()
-    {
-        return $this->hasMany(Appointment::class);
-    }
-
     public function opdVisits()
     {
         return $this->hasMany(OpdVisit::class);

@@ -26,18 +26,9 @@
                             <h6 class="text-muted">Invoice Info</h6>
                             <p class="mb-1"><strong>Invoice #:</strong> {{ $bill->invoice_number }}</p>
                             <p class="mb-1"><strong>Due Date:</strong> {{ $bill->due_date }}</p>
-                            @if($bill->appointment)
-                                <p class="mb-0"><strong>Appointment:</strong> {{ $bill->appointment->appointment_date }}</p>
-                            @endif
                         </div>
                     </div>
 
-                    @if($bill->appointment && $bill->appointment->doctor)
-                    <div class="mb-4">
-                        <h6 class="text-muted">Attending Doctor</h6>
-                        <p class="mb-0">Dr. {{ $bill->appointment->doctor->user->name }} — {{ $bill->appointment->doctor->specialization }}</p>
-                    </div>
-                    @endif
 
                     <div class="table-responsive mb-4">
                         <table class="table table-bordered">

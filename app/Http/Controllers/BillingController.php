@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Billing;
 use App\Models\Patient;
-use App\Models\Appointment;
 use App\Models\OpdVisit;
 use App\Models\IpdAdmission;
 use App\Services\BillingService;
@@ -24,7 +23,7 @@ class BillingController extends Controller
      */
     public function index()
     {
-        $bills = Billing::with(['patient.user', 'appointment'])->latest()->paginate(10);
+        $bills = Billing::with(['patient.user', 'opdVisit'])->latest()->paginate(10);
         return view('billing.index', compact('bills'));
     }
 
@@ -34,8 +33,7 @@ class BillingController extends Controller
     public function create()
     {
         $patients = Patient::with('user')->get();
-        $appointments = Appointment::whereDoesntHave('billing')->get();
-        return view('billing.create', compact('patients', 'appointments'));
+        return view('billing.create', compact('patients'));
     }
 
     /**
@@ -218,7 +216,7 @@ class BillingController extends Controller
      */
     public function show(string $id)
     {
-        $bill = Billing::with(['patient.user', 'appointment.doctor.user', 'opdVisit.doctor.user'])->findOrFail($id);
+        $bill = Billing::with(['patient.user', 'opdVisit.doctor.user'])->findOrFail($id);
         return view('billing.show', compact('bill'));
     }
 

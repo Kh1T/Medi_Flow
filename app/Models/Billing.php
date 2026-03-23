@@ -13,7 +13,6 @@ class Billing extends Model
 
     protected $fillable = [
         'patient_id',
-        'appointment_id',
         'opd_visit_id',
         'ipd_admission_id',
         'invoice_number',
@@ -65,11 +64,6 @@ class Billing extends Model
     public function patient()
     {
         return $this->belongsTo(Patient::class);
-    }
-
-    public function appointment()
-    {
-        return $this->belongsTo(Appointment::class);
     }
 
     public function opdVisit()

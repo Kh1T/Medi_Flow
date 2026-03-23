@@ -47,7 +47,7 @@
                     <h4 class="card-title">Medical Information</h4>
                     <ul class="nav nav-tabs tab-solid tab-solid-primary" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" id="history-tab" data-bs-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="true">Appointments</a>
+                            <a class="nav-link active" id="history-tab" data-bs-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="true">OPD Visits</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" id="records-tab" data-bs-toggle="tab" href="#records" role="tab" aria-controls="records" aria-selected="false">Clinical Notes</a>
@@ -63,22 +63,24 @@
                                     <thead>
                                         <tr>
                                             <th>Date</th>
+                                            <th>Token</th>
                                             <th>Doctor</th>
-                                            <th>Reason</th>
+                                            <th>Type</th>
                                             <th>Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse($patient->appointments as $appt)
+                                        @forelse($patient->opdVisits as $visit)
                                             <tr>
-                                                <td>{{ $appt->appointment_date }}</td>
-                                                <td>Dr. {{ $appt->doctor->user->name }}</td>
-                                                <td>{{ $appt->reason }}</td>
-                                                <td><label class="badge badge-info">{{ $appt->status }}</label></td>
+                                                <td>{{ $visit->visit_date->format('M d, Y') }}</td>
+                                                <td>#{{ $visit->token_number }}</td>
+                                                <td>Dr. {{ $visit->doctor->user->name }}</td>
+                                                <td>{{ $visit->visit_type }}</td>
+                                                <td><label class="badge badge-{{ $visit->status == 'completed' ? 'success' : ($visit->status == 'in_progress' ? 'info' : 'secondary') }}">{{ ucfirst(str_replace('_', ' ', $visit->status)) }}</label></td>
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="4" class="text-center text-muted">No appointment history.</td>
+                                                <td colspan="5" class="text-center text-muted">No OPD visit history.</td>
                                             </tr>
                                         @endforelse
                                     </tbody>

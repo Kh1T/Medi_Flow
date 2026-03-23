@@ -112,7 +112,7 @@
         <div class="col-lg-12 grid-margin stretch-card">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h4 class="card-title">Recent Appointments</h4>
+                    <h4 class="card-title">Recent OPD Visits</h4>
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
                             <thead>
@@ -120,23 +120,25 @@
                                     <th>Patient</th>
                                     <th>Doctor</th>
                                     <th>Date</th>
+                                    <th>Type</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($recent_appointments as $appointment)
+                                @forelse($recent_opd_visits as $visit)
                                     <tr>
-                                        <td>{{ $appointment->patient->user->name ?? 'N/A' }}</td>
-                                        <td>Dr. {{ $appointment->doctor->user->name ?? 'N/A' }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($appointment->appointment_date)->format('d/m/Y h:i A') }}</td>
+                                        <td>{{ $visit->patient->first_name }} {{ $visit->patient->last_name }}</td>
+                                        <td>Dr. {{ $visit->doctor->user->name ?? 'N/A' }}</td>
+                                        <td>{{ $visit->visit_date->format('d/m/Y') }}</td>
+                                        <td>{{ $visit->visit_type }}</td>
                                         <td>
-                                            @php $aCols = ['scheduled'=>'info','completed'=>'success','cancelled'=>'danger']; @endphp
-                                            <label class="badge badge-{{ $aCols[$appointment->status] ?? 'secondary' }}">{{ ucfirst($appointment->status) }}</label>
+                                            @php $statusColors = ['scheduled'=>'secondary','in_progress'=>'info','completed'=>'success','cancelled'=>'danger']; @endphp
+                                            <label class="badge badge-{{ $statusColors[$visit->status] ?? 'secondary' }}">{{ ucfirst(str_replace('_', ' ', $visit->status)) }}</label>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center py-4 text-muted">No recent appointments.</td>
+                                        <td colspan="5" class="text-center py-4 text-muted">No recent OPD visits.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

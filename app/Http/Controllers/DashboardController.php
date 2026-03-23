@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Patient;
 use App\Models\Doctor;
-use App\Models\Appointment;
 use App\Models\OpdVisit;
 use App\Models\IpdAdmission;
 use App\Models\Billing;
@@ -22,7 +21,6 @@ class DashboardController extends Controller
             'today_opd_visits' => OpdVisit::whereDate('visit_date', today())->count(),
             'current_ipd_patients' => IpdAdmission::where('status', 'admitted')->orWhereNull('discharge_date')->count(),
             'doctors' => Doctor::count(),
-            'appointments' => Appointment::count(),
             'revenue' => Billing::where('status', 'paid')->sum('total'),
         ];
 
@@ -93,11 +91,11 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        $recent_appointments = Appointment::with(['patient.user', 'doctor.user'])
+        $recent_opd_visits = OpdVisit::with(['patient', 'doctor.user'])
             ->latest()
             ->take(5)
             ->get();
 
-        return view('home', compact('stats', 'recent_appointments', 'revenueData', 'bedStats', 'doctorStats', 'diagnosesRaw'));
+        return view('home', compact('stats', 'recent_opd_visits', 'revenueData', 'bedStats', 'doctorStats', 'diagnosesRaw'));
     }
 }
