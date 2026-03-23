@@ -75,6 +75,56 @@
                         </div>
                     </div>
 
+                    @if($visit->prescriptions && $visit->prescriptions->isNotEmpty())
+                    <div class="row">
+                        <div class="col-12 mb-4">
+                            <h5 class="text-primary border-bottom pb-2">Prescriptions</h5>
+                            @foreach($visit->prescriptions as $prescription)
+                            <div class="card mb-3">
+                                <div class="card-header bg-light">
+                                    <strong>Prescription #{{ $prescription->id }}</strong>
+                                    <span class="text-muted ms-2">Created: {{ $prescription->created_at->format('d M Y, h:i A') }}</span>
+                                </div>
+                                <div class="card-body py-2">
+                                    @if($prescription->prescriptionItems && $prescription->prescriptionItems->isNotEmpty())
+                                    <table class="table table-sm table-striped mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Medicine</th>
+                                                <th>Dosage</th>
+                                                <th>Quantity</th>
+                                                <th>Price</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($prescription->prescriptionItems as $item)
+                                            <tr>
+                                                <td>{{ $item->medicine_name }}</td>
+                                                <td>{{ $item->dosage ?? 'N/A' }}</td>
+                                                <td>{{ $item->quantity }}</td>
+                                                <td>${{ number_format($item->price, 2) }}</td>
+                                                <td>${{ number_format($item->quantity * $item->price, 2) }}</td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                        <tfoot class="table-secondary">
+                                            <tr>
+                                                <td colspan="4" class="text-end"><strong>Prescription Total:</strong></td>
+                                                <td><strong>${{ number_format($prescription->getTotalCost(), 2) }}</strong></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                    @else
+                                    <p class="text-muted mb-0">No items in this prescription.</p>
+                                    @endif
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
                 </div>
             </div>
         </div>

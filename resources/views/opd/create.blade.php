@@ -89,15 +89,66 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="payment_status">Payment Status</label>
-                                    <select class="form-control @error('payment_status') is-invalid @enderror" id="payment_status" name="payment_status" required>
-                                        <option value="Unpaid" {{ old('payment_status') == 'Unpaid' ? 'selected' : '' }}>Unpaid</option>
-                                        <option value="Pending" {{ old('payment_status') == 'Pending' ? 'selected' : '' }}>Pending</option>
-                                        <option value="Paid" {{ old('payment_status') == 'Paid' ? 'selected' : '' }}>Paid</option>
-                                    </select>
-                                    @error('payment_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                                    <input type="text" class="form-control" value="Unpaid" readonly>
+                                    <input type="hidden" name="payment_status" value="Unpaid">
+                                    <small class="text-muted">Payment is processed via billing after visit.</small>
                                 </div>
                             </div>
                         </div>
+
+                        <hr class="my-4">
+                        <h5 class="card-title">Prescription Items</h5>
+                        <p class="card-description text-muted">Add medicines prescribed to the patient (optional)</p>
+                        
+                        <div id="prescription-items-container">
+                            <div class="prescription-item-row row mb-3" data-index="0">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="medicine_0">Medicine Name</label>
+                                        <input type="text" class="form-control" id="medicine_0" name="prescription_items[0][medicine_name]" placeholder="e.g., Paracetamol">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="dosage_0">Dosage</label>
+                                        <input type="text" class="form-control" id="dosage_0" name="prescription_items[0][dosage]" placeholder="e.g., 500mg">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label for="quantity_0">Quantity</label>
+                                        <input type="number" class="form-control" id="quantity_0" name="prescription_items[0][quantity]" value="1" min="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="price_0">Price ($)</label>
+                                        <input type="number" step="0.01" class="form-control" id="price_0" name="prescription_items[0][price]" value="0.00" min="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-1 d-flex align-items-end">
+                                    <button type="button" class="btn btn-danger btn-sm remove-prescription-item" title="Remove">
+                                        <i class="mdi mdi-minus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="button" id="add-prescription-item" class="btn btn-secondary btn-sm mb-3">
+                            <i class="mdi mdi-plus"></i> Add Medicine
+                        </button>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="prescription_total">Prescription Total ($)</label>
+                                    <input type="number" step="0.01" class="form-control" id="prescription_total" name="prescription_total" value="0.00" readonly>
+                                    <small class="text-muted">Auto-calculated from prescription items.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
 
                         <button type="submit" class="btn btn-primary me-2">Register Visit</button>
                         <a href="{{ route('opd.index') }}" class="btn btn-light">Cancel</a>
@@ -112,7 +163,13 @@
         document.addEventListener('DOMContentLoaded', function() {
             const doctorSelect = document.getElementById('doctor_id');
             const feeInput = document.getElementById('fee');
+            const prescriptionContainer = document.getElementById('prescription-items-container');
+            const addBtn = document.getElementById('add-prescription-item');
+            const prescriptionTotalInput = document.getElementById('prescription_total');
+            
+            let itemIndex = 1;
 
+            // Handle doctor fee selection
             doctorSelect.addEventListener('change', function() {
                 const selectedOption = this.options[this.selectedIndex];
                 const fee = selectedOption.getAttribute('data-fee');
@@ -124,10 +181,96 @@
                 }
             });
 
-            // Trigger change if a doctor is already selected (e.g. on old validation failure)
+            // Trigger change if a doctor is already selected
             if (doctorSelect.value) {
                 doctorSelect.dispatchEvent(new Event('change'));
             }
+
+            // Function to calculate prescription total
+            function calculatePrescriptionTotal() {
+                let total = 0;
+                document.querySelectorAll('.prescription-item-row').forEach(function(row) {
+                    const quantity = parseFloat(row.querySelector('input[name*="[quantity]"]').value) || 0;
+                    const price = parseFloat(row.querySelector('input[name*="[price]"]').value) || 0;
+                    total += quantity * price;
+                });
+                prescriptionTotalInput.value = total.toFixed(2);
+            }
+
+            // Add new prescription item
+            addBtn.addEventListener('click', function() {
+                const newRow = document.createElement('div');
+                newRow.className = 'prescription-item-row row mb-3';
+                newRow.setAttribute('data-index', itemIndex);
+                newRow.innerHTML = `
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="medicine_${itemIndex}">Medicine Name</label>
+                            <input type="text" class="form-control" id="medicine_${itemIndex}" name="prescription_items[${itemIndex}][medicine_name]" placeholder="e.g., Paracetamol">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="dosage_${itemIndex}">Dosage</label>
+                            <input type="text" class="form-control" id="dosage_${itemIndex}" name="prescription_items[${itemIndex}][dosage]" placeholder="e.g., 500mg">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label for="quantity_${itemIndex}">Quantity</label>
+                            <input type="number" class="form-control" id="quantity_${itemIndex}" name="prescription_items[${itemIndex}][quantity]" value="1" min="1">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="price_${itemIndex}">Price ($)</label>
+                            <input type="number" step="0.01" class="form-control" id="price_${itemIndex}" name="prescription_items[${itemIndex}][price]" value="0.00" min="0">
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger btn-sm remove-prescription-item" title="Remove">
+                            <i class="mdi mdi-minus"></i>
+                        </button>
+                    </div>
+                `;
+                
+                prescriptionContainer.appendChild(newRow);
+                
+                // Add event listeners for the new row
+                const quantityInput = newRow.querySelector('input[name*="[quantity]"]');
+                const priceInput = newRow.querySelector('input[name*="[price]"]');
+                quantityInput.addEventListener('input', calculatePrescriptionTotal);
+                priceInput.addEventListener('input', calculatePrescriptionTotal);
+                
+                itemIndex++;
+            });
+
+            // Remove prescription item (event delegation)
+            prescriptionContainer.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-prescription-item')) {
+                    const rows = document.querySelectorAll('.prescription-item-row');
+                    if (rows.length > 1) {
+                        e.target.closest('.prescription-item-row').remove();
+                        calculatePrescriptionTotal();
+                    } else {
+                        // Clear the first row instead of removing it
+                        const firstRow = rows[0];
+                        firstRow.querySelector('input[name*="[medicine_name]"]').value = '';
+                        firstRow.querySelector('input[name*="[dosage]"]').value = '';
+                        firstRow.querySelector('input[name*="[quantity]"]').value = '1';
+                        firstRow.querySelector('input[name*="[price]"]').value = '0.00';
+                        calculatePrescriptionTotal();
+                    }
+                }
+            });
+
+            // Add event listeners for existing rows
+            document.querySelectorAll('.prescription-item-row').forEach(function(row) {
+                const quantityInput = row.querySelector('input[name*="[quantity]"]');
+                const priceInput = row.querySelector('input[name*="[price]"]');
+                quantityInput.addEventListener('input', calculatePrescriptionTotal);
+                priceInput.addEventListener('input', calculatePrescriptionTotal);
+            });
         });
     </script>
     @endpush

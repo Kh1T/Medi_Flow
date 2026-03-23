@@ -18,6 +18,11 @@ class Billing extends Model
         'ipd_admission_id',
         'invoice_number',
         'charges',
+        'consultation_fee',
+        'lab_charges',
+        'medicine_charges',
+        'procedure_charges',
+        'prescription_charges',
         'contractual_adjustments',
         'insurance_coverage',
         'patient_amount',
@@ -39,6 +44,11 @@ class Billing extends Model
     {
         return [
             'charges' => 'decimal:2',
+            'consultation_fee' => 'decimal:2',
+            'lab_charges' => 'decimal:2',
+            'medicine_charges' => 'decimal:2',
+            'procedure_charges' => 'decimal:2',
+            'prescription_charges' => 'decimal:2',
             'contractual_adjustments' => 'decimal:2',
             'insurance_coverage' => 'decimal:2',
             'patient_amount' => 'decimal:2',
@@ -70,6 +80,11 @@ class Billing extends Model
     public function ipdAdmission()
     {
         return $this->belongsTo(IpdAdmission::class, 'ipd_admission_id');
+    }
+
+    public function prescriptions()
+    {
+        return $this->hasMany(Prescription::class, 'opd_visit_id')->orWhere('ipd_admission_id', $this->ipd_admission_id);
     }
 
     /**

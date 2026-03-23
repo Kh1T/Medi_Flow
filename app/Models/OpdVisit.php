@@ -40,4 +40,14 @@ class OpdVisit extends Model
     {
         return $this->belongsTo(Doctor::class);
     }
+
+    public function prescriptions()
+    {
+        return $this->hasMany(Prescription::class, 'opd_visit_id');
+    }
+
+    public function billing()
+    {
+        return $this->hasOne(Billing::class, 'opd_visit_id');
+    }
 }

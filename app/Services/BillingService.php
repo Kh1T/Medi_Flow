@@ -68,11 +68,12 @@ class BillingService
             $labCharges = floatval($billingData['lab_charges'] ?? 0);
             $medicineCost = floatval($billingData['medicine_cost'] ?? 0);
             $procedureCharges = floatval($billingData['procedure_charges'] ?? 0);
+            $prescriptionCharges = floatval($billingData['prescription_charges'] ?? 0);
             $discount = floatval($billingData['discount'] ?? 0);
             $applyInsurance = $billingData['apply_insurance'] ?? false;
 
             // Calculate subtotal (before discount and insurance)
-            $subtotal = $consultationFee + $labCharges + $medicineCost + $procedureCharges;
+            $subtotal = $consultationFee + $labCharges + $medicineCost + $procedureCharges + $prescriptionCharges;
 
             // Apply discount
             $afterDiscount = $subtotal - $discount;
@@ -101,6 +102,11 @@ class BillingService
                 'opd_visit_id' => $visit->id,
                 'invoice_number' => $invoiceNumber,
                 'charges' => $subtotal,
+                'consultation_fee' => $consultationFee,
+                'lab_charges' => $labCharges,
+                'medicine_charges' => $medicineCost,
+                'procedure_charges' => $procedureCharges,
+                'prescription_charges' => $prescriptionCharges,
                 'contractual_adjustments' => $discount,
                 'subtotal' => $afterDiscount,
                 'tax' => 0,
@@ -226,13 +232,16 @@ class BillingService
             $bedCharges = floatval($billingData['bed_charges'] ?? ($bedDays * $bedPricePerDay));
             
             // Extract other billing components
+            $consultationFee = floatval($billingData['consultation_fee'] ?? 0);
             $medicineCharges = floatval($billingData['medicine_charges'] ?? 0);
+            $procedureCharges = floatval($billingData['procedure_charges'] ?? 0);
+            $prescriptionCharges = floatval($billingData['prescription_charges'] ?? 0);
             $miscCharges = floatval($billingData['misc_charges'] ?? 0);
             $discount = floatval($billingData['discount'] ?? 0);
             $applyInsurance = $billingData['apply_insurance'] ?? false;
 
             // Calculate subtotal (before discount and insurance)
-            $subtotal = $bedCharges + $medicineCharges + $miscCharges;
+            $subtotal = $bedCharges + $consultationFee + $medicineCharges + $procedureCharges + $prescriptionCharges + $miscCharges;
 
             // Apply discount
             $afterDiscount = $subtotal - $discount;
@@ -279,6 +288,10 @@ class BillingService
                 'bed_type' => $bedType,
                 'bed_days' => $bedDays,
                 'bed_charges' => $bedCharges,
+                'consultation_fee' => $consultationFee,
+                'medicine_charges' => $medicineCharges,
+                'procedure_charges' => $procedureCharges,
+                'prescription_charges' => $prescriptionCharges,
             ]);
 
             return $invoice;

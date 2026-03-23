@@ -151,6 +151,11 @@ class BillingController extends Controller
             'discount' => 'nullable|numeric|min:0',
             'apply_insurance' => 'nullable|boolean',
             'due_date' => 'nullable|date',
+            'consultation_fee' => 'nullable|numeric|min:0',
+            'lab_charges' => 'nullable|numeric|min:0',
+            'medicine_charges' => 'nullable|numeric|min:0',
+            'procedure_charges' => 'nullable|numeric|min:0',
+            'prescription_charges' => 'nullable|numeric|min:0',
         ]);
 
         $data = $request->all();
@@ -280,10 +285,9 @@ class BillingController extends Controller
             'lab_charges' => 'nullable|numeric|min:0',
             'medicine_cost' => 'nullable|numeric|min:0',
             'procedure_charges' => 'nullable|numeric|min:0',
+            'prescription_charges' => 'nullable|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'apply_insurance' => 'nullable|boolean',
-            'payment_method' => 'required|in:cash,card,insurance',
-            'paid_amount' => 'required|numeric|min:0',
         ]);
 
         $billingData = $request->all();
