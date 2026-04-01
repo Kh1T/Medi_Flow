@@ -145,24 +145,47 @@ class BillingController extends Controller
     {
         $request->validate([
             'patient_id' => 'required|exists:patients,id',
-            'charges' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'apply_insurance' => 'nullable|boolean',
             'due_date' => 'nullable|date',
             'consultation_fee' => 'nullable|numeric|min:0',
             'lab_charges' => 'nullable|numeric|min:0',
+            'medicine_cost' => 'nullable|numeric|min:0',
             'medicine_charges' => 'nullable|numeric|min:0',
             'procedure_charges' => 'nullable|numeric|min:0',
             'prescription_charges' => 'nullable|numeric|min:0',
+            'charges' => 'nullable|numeric|min:0', // For IPD billing
         ]);
 
         $data = $request->all();
         $data['invoice_number'] = 'INV-' . strtoupper(str()->random(8));
         
-        // Calculate totals
-        $charges = floatval($request->charges ?? 0);
+        // Extract all charges
+        $consultationFee = floatval($request->consultation_fee ?? 0);
+        $labCharges = floatval($request->lab_charges ?? 0);
+        // Handle both medicine_cost (from form) and medicine_charges (controller expects)
+        $medicineCharges = floatval($request->medicine_cost ?? $request->medicine_charges ?? 0);
+        $procedureCharges = floatval($request->procedure_charges ?? 0);
+        $prescriptionCharges = floatval($request->prescription_charges ?? 0);
+        $ipdCharges = floatval($request->charges ?? 0); // For IPD billing
+        
+        // Calculate subtotal - sum ALL individual charges
+        $charges = $consultationFee + $labCharges + $medicineCharges + $procedureCharges + $prescriptionCharges;
+        
+        // If IPD charges are provided (alternative billing method), use that
+        if ($ipdCharges > 0) {
+            $charges = $ipdCharges;
+        }
+        
         $discount = floatval($request->discount ?? 0);
         $applyInsurance = $request->boolean('apply_insurance');
+        
+        // Store individual charges in data
+        $data['consultation_fee'] = $consultationFee;
+        $data['lab_charges'] = $labCharges;
+        $data['medicine_charges'] = $medicineCharges;
+        $data['procedure_charges'] = $procedureCharges;
+        $data['prescription_charges'] = $prescriptionCharges;
         
         $data['contractual_adjustments'] = $discount;
         $data['subtotal'] = $charges - $discount;

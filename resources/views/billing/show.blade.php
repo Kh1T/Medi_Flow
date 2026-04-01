@@ -97,7 +97,7 @@
                                 </div>
                                 <form action="{{ route('billing.processPayment', $bill->id) }}" method="POST">
                                     @csrf
-                                    <div class="modal-body">
+       <div class="modal-body">
                                         <div class="mb-3">
                                             <label class="form-label">Payment Method</label>
                                             <select name="method" class="form-select" required>

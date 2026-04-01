@@ -31,7 +31,7 @@
             const qrString = @json($qr ?? null);
             const md5 = @json($md5 ?? null);
             const billingId = @json($billing->id);
-            const verifyUrl = @json(route('checkout.verify.transaction'));
+            const verifyUrl = @json(route('checkout.verify'));
             const successUrl = @json(route('checkout.success', $billing->id));
             const csrfToken = @json(csrf_token());
 
@@ -72,7 +72,13 @@
                     });
 
                     const data = await response.json();
-                    console.log(data);
+                    console.log('Verify response:', data);
+
+                    if (!response.ok) {
+                        // Server error (like missing BAKONG_TOKEN)
+                        setStatus(data.message || 'Server error. Please check configuration.', 'danger');
+                        return; // Don't keep retrying on server errors
+                    }
 
                     if (data.paid) {
                         setStatus(data.message || 'Payment successful! Redirecting...', 'success');
@@ -83,7 +89,7 @@
 
                         return; // stop loop
                     } else {
-                        setStatus('Waiting for payment...', 'warning');
+                        setStatus(data.message || 'Waiting for payment...', 'warning');
                     }
                 } catch (error) {
                     console.error(error);

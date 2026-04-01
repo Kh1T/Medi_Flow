@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use KHQR\BakongKHQR;
 use KHQR\Helpers\KHQRData;
+use KHQR\Helpers\Utils;
 use KHQR\Models\IndividualInfo;
 
 class CheckoutController extends Controller
@@ -56,9 +57,6 @@ class CheckoutController extends Controller
         }
     }
 
-    /**
-     * Verify Bakong transaction using md5
-     */
     public function verifyTransaction(Request $request)
     {
         $request->validate([
@@ -133,6 +131,7 @@ class CheckoutController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Success page after payment completed

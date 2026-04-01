@@ -73,4 +73,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('billing/calculate', [BillingController::class, 'calculateSummary'])->name('billing.calculate');
     Route::get('billing/{invoice}/payment', [BillingController::class, 'showPaymentForm'])->name('billing.payment');
     Route::post('billing/{invoice}/payment', [BillingController::class, 'processPayment'])->name('billing.processPayment');
+    
+    // Checkout Routes (KHQR & Cash Payments)
+    Route::post('checkout/{billing}/cash', [CheckoutController::class, 'payCash'])->name('checkout.cash');
+    Route::get('checkout/{billing}/khqr', [CheckoutController::class, 'showKhqr'])->name('checkout.khqr');
+    Route::post('checkout/verify', [CheckoutController::class, 'verifyTransaction'])->name('checkout.verify');
+    Route::get('checkout/{billing}/success', [CheckoutController::class, 'success'])->name('checkout.success');
 });
