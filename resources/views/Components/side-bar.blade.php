@@ -68,8 +68,6 @@
               </a> -->
               <div class="collapse" id="emr">
                 <ul class="nav flex-column sub-menu">
-                  <li class="nav-item"><a class="nav-link" href="{{ url('/emr') }}">View Records</a></li>
-                  <li class="nav-item"><a class="nav-link" href="{{ url('/emr/create') }}">New Clinical Note</a></li>
                 </ul>
               </div>
             </li>

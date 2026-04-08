@@ -254,34 +254,90 @@ class DatabaseSeeder extends Seeder
         }
 
         // ── 7. OPD Visits ──
-        $opdCount = intval($count * 1.2);
+        $opdCount = intval($count * 2);
         $tokenCounter = 1;
+        $opdVisits = [];
 
         for ($i = 0; $i < $opdCount; $i++) {
             $patient = $faker->randomElement($patients);
             $doctor = $faker->randomElement($doctors);
             $visitDate = $faker->dateTimeBetween('-6 months', 'now');
             $opdStatus = $faker->randomElement(['scheduled', 'in_progress', 'completed', 'completed', 'completed', 'cancelled']);
+            $visitDiagnosis = $opdStatus === 'completed' ? $faker->randomElement($diagnoses) : null;
 
-            OpdVisit::create([
+            $opdVisit = OpdVisit::create([
                 'patient_id' => $patient->id,
                 'doctor_id' => $doctor->id,
                 'token_number' => $tokenCounter++,
                 'visit_date' => $visitDate->format('Y-m-d'),
                 'symptoms' => implode(', ', $faker->randomElements($symptoms, $faker->numberBetween(1, 3))),
-                'diagnosis' => $opdStatus === 'completed' ? $faker->randomElement($diagnoses) : null,
+                'diagnosis' => $visitDiagnosis,
                 'visit_type' => $faker->randomElement(['New', 'Follow-up']),
                 'fee' => $faker->randomFloat(2, 20, 150),
                 'payment_status' => $opdStatus === 'completed' ? $faker->randomElement(['Paid', 'Paid', 'Pending']) : 'Unpaid',
                 'status' => $opdStatus,
             ]);
+
+            $opdVisits[] = $opdVisit;
+
+            // Add prescriptions for completed OPD visits (80% chance)
+            if ($opdStatus === 'completed' && $faker->boolean(80)) {
+                $prescriptionId = DB::table('prescriptions')->insertGetId([
+                    'opd_visit_id' => $opdVisit->id,
+                    'doctor_id' => $doctor->id,
+                    'patient_id' => $patient->id,
+                    'diagnosis' => $visitDiagnosis,
+                    'valid_until' => Carbon::parse($visitDate)->addDays(30)->format('Y-m-d'),
+                    'status' => $faker->randomElement(['active', 'dispensed', 'expired']),
+                    'created_at' => $visitDate,
+                    'updated_at' => $visitDate,
+                ]);
+
+                $itemCount = $faker->numberBetween(1, 5);
+                for ($j = 0; $j < $itemCount; $j++) {
+                    DB::table('prescription_items')->insert([
+                        'prescription_id' => $prescriptionId,
+                        'medicine_name' => $faker->randomElement($medicines),
+                        'dosage' => $faker->randomElement(['1 tablet', '2 tablets', '5ml', '10ml', '1 capsule']),
+                        'frequency' => $faker->randomElement(['Once daily', 'Twice daily', 'Three times daily', 'Every 8 hours', 'Every 12 hours']),
+                        'duration' => $faker->randomElement(['3 days', '5 days', '7 days', '14 days', '30 days']),
+                        'instructions' => $faker->randomElement(['After meals', 'Before meals', 'With water', 'Before bed', 'Take with food', null]),
+                        'created_at' => $visitDate,
+                        'updated_at' => $visitDate,
+                    ]);
+                }
+            }
         }
 
         // ── 8. IPD Admissions ──
-        $ipdCount = max(3, intval($count * 0.3));
+        $ipdCount = max(5, intval($count * 0.5));
         $availableBeds = collect($beds)->shuffle();
         $doctorUserIds = User::where('role', 'doctor')->pluck('id')->toArray();
-        $allStaffIds = User::whereIn('role', ['admin', 'doctor'])->pluck('id')->toArray();
+        $allStaffIds = User::whereIn('role', ['admin', 'doctor', 'receptionist'])->pluck('id')->toArray();
+
+        // IPD-specific diagnoses and reasons
+        $ipdDiagnoses = [
+            'Pneumonia', 'Acute Myocardial Infarction', 'Stroke', 'Fractured Femur',
+            'Appendicitis', 'Sepsis', 'Diabetic Ketoacidosis', 'Acute Kidney Injury',
+            'Gastrointestinal Bleeding', 'Meningitis', 'Severe Dehydration',
+            'Asthma Exacerbation', 'COPD Exacerbation', 'Heart Failure',
+            'Post-operative Care', 'Trauma Management', 'Burns',
+        ];
+
+        $admissionReasons = [
+            'Severe chest pain and difficulty breathing',
+            'High fever with altered consciousness',
+            'Road traffic accident injuries',
+            'Severe abdominal pain requiring surgery',
+            'Uncontrolled diabetes complications',
+            'Respiratory distress requiring oxygen therapy',
+            'Post-surgical observation required',
+            'Severe infection requiring IV antibiotics',
+            'Fracture requiring surgical intervention',
+            'Stroke symptoms - left side weakness',
+        ];
+
+        $testNames = ['Complete Blood Count', 'Blood Sugar', 'Urinalysis', 'X-Ray', 'MRI', 'CT Scan', 'Liver Function Test', 'Kidney Function Test', 'ECG', 'Lipid Profile', 'Blood Culture', 'Thyroid Panel', 'Arterial Blood Gas'];
 
         for ($i = 0; $i < $ipdCount; $i++) {
             $patient = $faker->randomElement($patients);
@@ -290,10 +346,11 @@ class DatabaseSeeder extends Seeder
             if (!$bed) break;
 
             $admissionDate = $faker->dateTimeBetween('-4 months', '-3 days');
-            $isDischarged = $faker->boolean(60);
-            $dischargeDate = $isDischarged ? Carbon::parse($admissionDate)->addDays($faker->numberBetween(2, 21)) : null;
+            $isDischarged = $faker->boolean(70);
+            $stayDays = $faker->numberBetween(2, 21);
+            $dischargeDate = $isDischarged ? Carbon::parse($admissionDate)->addDays($stayDays) : null;
             $status = $isDischarged ? 'discharged' : 'admitted';
-            $diagnosis = $faker->randomElement($diagnoses);
+            $diagnosis = $faker->randomElement($ipdDiagnoses);
 
             if ($status === 'admitted') {
                 $bed->update(['is_occupied' => true]);
@@ -305,61 +362,82 @@ class DatabaseSeeder extends Seeder
                 'bed_id' => $bed->id,
                 'admission_date' => $admissionDate->format('Y-m-d'),
                 'discharge_date' => $dischargeDate?->format('Y-m-d'),
-                'ward_type' => $bed->ward_type,
-                'bed_number' => $bed->bed_number,
                 'admission_type' => $faker->randomElement(['Emergency', 'Planned']),
-                'admission_reason' => $faker->sentence(6),
-                'symptoms' => implode(', ', $faker->randomElements($symptoms, $faker->numberBetween(1, 3))),
+                'admission_reason' => $faker->randomElement($admissionReasons),
+                'symptoms' => implode(', ', $faker->randomElements($symptoms, $faker->numberBetween(2, 4))),
                 'diagnosis' => $diagnosis,
-                'discharge_summary' => $isDischarged ? $faker->paragraph() : null,
-                'total_bill' => $isDischarged ? $faker->randomFloat(2, 500, 10000) : null,
+                'discharge_summary' => $isDischarged ? $faker->paragraph(3) : null,
                 'status' => $status,
             ]);
 
-            // IPD Notes
-            $noteCount = $faker->numberBetween(1, 5);
+            // IPD Notes (Daily progress notes)
+            $noteCount = $isDischarged ? $stayDays : $faker->numberBetween(1, 5);
             for ($j = 0; $j < $noteCount; $j++) {
                 DB::table('ipd_notes')->insert([
                     'ipd_admission_id' => $admission->id,
                     'author_id' => $faker->randomElement($allStaffIds),
                     'note_type' => $faker->randomElement(['nurse_chart', 'doctor_visit']),
-                    'notes' => $faker->paragraph(),
-                    'created_at' => Carbon::parse($admissionDate)->addDays($j),
-                    'updated_at' => Carbon::parse($admissionDate)->addDays($j),
+                    'notes' => $faker->randomElement([
+                        'Patient stable, vitals within normal range.',
+                        'Patient showing improvement. Pain level reduced.',
+                        'Medication administered as prescribed. No adverse reactions.',
+                        'Patient reports feeling better. Appetite improving.',
+                        'IV fluids continued. Hydration status adequate.',
+                        'Wound dressing changed. No signs of infection.',
+                        'Patient ambulating with assistance.',
+                        'Respiratory rate improved. Oxygen saturation 98%.',
+                        'Blood pressure stable. Continue current medications.',
+                        'Patient resting comfortably. Sleep pattern normal.',
+                    ]),
+                    'created_at' => Carbon::parse($admissionDate)->addDays($j)->addHours($faker->numberBetween(8, 18)),
+                    'updated_at' => Carbon::parse($admissionDate)->addDays($j)->addHours($faker->numberBetween(8, 18)),
                 ]);
             }
 
-            // IPD Medications
-            $medCount = $faker->numberBetween(1, 4);
+            // IPD Medications (Multiple times per day during stay)
+            $medCount = $isDischarged ? $stayDays * 3 : $faker->numberBetween(3, 10);
             for ($j = 0; $j < $medCount; $j++) {
+                $medDay = intval($j / 3);
                 DB::table('ipd_medications')->insert([
                     'ipd_admission_id' => $admission->id,
                     'medicine_name' => $faker->randomElement($medicines),
-                    'dosage' => $faker->randomElement(['1 tablet', '2 tablets', '5ml', '10ml', '1 injection']),
-                    'administered_at' => Carbon::parse($admissionDate)->addDays($j)->addHours($faker->numberBetween(6, 20)),
+                    'dosage' => $faker->randomElement(['1 tablet', '2 tablets', '5ml', '10ml', '1 injection', 'IV drip']),
+                    'administered_at' => Carbon::parse($admissionDate)->addDays($medDay)->addHours($faker->numberBetween(6, 22)),
                     'administered_by' => $faker->randomElement($allStaffIds),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
             }
 
-            // IPD Lab Requests
-            if ($faker->boolean(60)) {
-                $labCount = $faker->numberBetween(1, 3);
-                $testNames = ['Complete Blood Count', 'Blood Sugar', 'Urinalysis', 'X-Ray', 'MRI', 'CT Scan', 'Liver Function Test', 'Kidney Function Test', 'ECG', 'Lipid Profile'];
+            // IPD Lab Requests (More comprehensive)
+            if ($faker->boolean(80)) {
+                $labCount = $faker->numberBetween(2, 5);
                 for ($j = 0; $j < $labCount; $j++) {
-                    $labStatus = $isDischarged ? $faker->randomElement(['completed', 'completed', 'cancelled']) : $faker->randomElement(['pending', 'completed']);
+                    $labStatus = $isDischarged ? $faker->randomElement(['completed', 'completed', 'completed', 'cancelled']) : $faker->randomElement(['pending', 'completed', 'completed']);
+                    $testName = $faker->randomElement($testNames);
+                    $resultNotes = null;
+
+                    if ($labStatus === 'completed') {
+                        $resultNotes = match ($testName) {
+                            'Complete Blood Count' => 'WBC: ' . $faker->numberBetween(4000, 11000) . ', RBC: ' . $faker->randomFloat(2, 4.0, 6.0) . ', Hemoglobin: ' . $faker->randomFloat(1, 12, 16),
+                            'Blood Sugar' => 'Fasting: ' . $faker->randomFloat(1, 70, 140) . ' mg/dL, Random: ' . $faker->randomFloat(1, 100, 200) . ' mg/dL',
+                            'X-Ray', 'CT Scan', 'MRI' => $faker->randomElement(['No significant abnormalities detected.', 'Findings consistent with clinical presentation.', 'Mild changes noted, correlate clinically.']),
+                            default => 'Results within normal limits.',
+                        };
+                    }
+
                     DB::table('ipd_lab_requests')->insert([
                         'ipd_admission_id' => $admission->id,
-                        'test_name' => $faker->randomElement($testNames),
+                        'test_name' => $testName,
                         'status' => $labStatus,
-                        'requested_at' => Carbon::parse($admissionDate)->addDays($faker->numberBetween(0, 3)),
-                        'result_notes' => $labStatus === 'completed' ? $faker->sentence() : null,
+                        'requested_at' => Carbon::parse($admissionDate)->addDays($faker->numberBetween(0, min($stayDays - 1, 3))),
+                        'result_notes' => $resultNotes,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
                 }
             }
+
         }
 
         // ── 9. Invoices ──
@@ -404,7 +482,7 @@ class DatabaseSeeder extends Seeder
         $ipdAdmissions = IpdAdmission::where('status', 'discharged')->get();
 
         foreach ($ipdAdmissions as $admission) {
-            $charges = $admission->total_bill ?? $faker->randomFloat(2, 500, 8000);
+            $charges = $faker->randomFloat(2, 500, 8000);
             $adjustment = $faker->randomFloat(2, 0, $charges * 0.1);
             $subtotal = $charges - $adjustment;
             $tax = round($subtotal * 0.05, 2);
@@ -436,13 +514,22 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
+        // Count related records
+        $opdPrescriptions = DB::table('prescriptions')->whereNotNull('opd_visit_id')->count();
+        $ipdNotes = DB::table('ipd_notes')->count();
+        $ipdMeds = DB::table('ipd_medications')->count();
+        $ipdLabs = DB::table('ipd_lab_requests')->count();
+
         echo "\n✓ Seeded with count={$count}:\n";
         echo "  • " . User::count() . " users\n";
         echo "  • " . Doctor::count() . " doctors\n";
         echo "  • " . Patient::count() . " patients\n";
         echo "  • " . Appointment::count() . " appointments\n";
-        echo "  • " . OpdVisit::count() . " OPD visits\n";
+        echo "  • " . OpdVisit::count() . " OPD visits (with {$opdPrescriptions} prescriptions)\n";
         echo "  • " . IpdAdmission::count() . " IPD admissions\n";
+        echo "     - {$ipdNotes} progress notes\n";
+        echo "     - {$ipdMeds} medication records\n";
+        echo "     - {$ipdLabs} lab requests\n";
         echo "  • " . Bed::count() . " beds\n";
         echo "  • " . Billing::count() . " invoices\n";
     }
